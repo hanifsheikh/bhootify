@@ -15,8 +15,8 @@ class MyApp extends StatelessWidget {
       title: 'Bhootify',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-          primaryColor: const Color(0xFF3EBACE),
-          scaffoldBackgroundColor: const Color(0xFFF3F5F7)),
+          primaryColor: const Color(0xFFFA7F16),
+          scaffoldBackgroundColor: const Color.fromARGB(255, 42, 42, 42)),
       home: const HomeScreen(),
     );
   }

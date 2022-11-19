@@ -1,6 +1,7 @@
 import 'package:bhootify/models/file_model.dart';
 import 'package:drop_shadow_image/drop_shadow_image.dart';
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
   final File file;
@@ -11,6 +12,52 @@ class MusicPlayerScreen extends StatefulWidget {
 }
 
 class MusicPlayerScreenState extends State<MusicPlayerScreen> {
+  AudioPlayer player = AudioPlayer();
+  bool isPlaying = false;
+
+  Duration duration = Duration.zero;
+  Duration position = Duration.zero;
+
+  String formatTime(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(duration.inHours);
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return [if (duration.inHours > 0) hours, minutes, seconds].join(':');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen to states: playing, paused, stopped.
+    player.onPlayerStateChanged.listen((state) {
+      setState(() {
+        isPlaying = state == PlayerState.playing;
+      });
+    });
+
+    // Listen to audio duration
+    player.onDurationChanged.listen((newDuration) {
+      setState(() {
+        duration = newDuration;
+      });
+    });
+
+    // Listen to audio position
+    player.onPositionChanged.listen((newPosition) {
+      setState(() {
+        position = newPosition;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    player.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,7 +142,7 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                           fontSize: 14.0,
                           color: Color(0xFFFFFFFF)),
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 5.0,
                     ),
                     Text(
@@ -108,6 +155,65 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                           color: Color(0xFFFFFFFF)),
                     ),
                   ],
+                ),
+              ),
+              Slider(
+                  min: 0,
+                  thumbColor: const Color(0xFFFFFFFF),
+                  inactiveColor: Color.fromARGB(255, 92, 92, 92),
+                  activeColor: const Color(0xFFFA7F16),
+                  max: duration.inSeconds.toDouble(),
+                  value: position.inSeconds.toDouble(),
+                  onChanged: (value) async {
+                    final position = Duration(seconds: value.toInt());
+                    await player.seek(position);
+
+                    // Optional: Play audio if was paused
+                    // await player.resume();
+                  }),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      formatTime(duration),
+                      style: const TextStyle(
+                          color: Color(0xFFFFFFFF),
+                          fontSize: 10.0,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'Poppins'),
+                    ),
+                    Text(
+                      formatTime(duration - position),
+                      style: const TextStyle(
+                          color: Color(0xFFFFFFFF),
+                          fontSize: 10.0,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'Poppins'),
+                    )
+                  ],
+                ),
+              ),
+              CircleAvatar(
+                radius: 35,
+                backgroundColor: isPlaying
+                    ? const Color(0xFFFA7F16)
+                    : const Color(0xFFFFFFFF),
+                child: IconButton(
+                  icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+                  iconSize: 24,
+                  color: isPlaying
+                      ? const Color(0xFFFFFFFF)
+                      : const Color(0xFFFA7F16),
+                  onPressed: () async {
+                    if (isPlaying) {
+                      await player.pause();
+                    } else {
+                      await player
+                          .play(AssetSource('sounds/' + widget.file.fileURL));
+                    }
+                  },
                 ),
               )
             ],
