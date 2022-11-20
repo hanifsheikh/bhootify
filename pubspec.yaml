@@ -35,6 +35,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   drop_shadow_image: ^0.9.0
   audioplayers: ^1.1.1
+  http: ^0.13.5
 
 dev_dependencies:
   flutter_test:
@@ -103,9 +104,3 @@ flutter:
         - asset: fonts/Poppins-Regular.ttf
         - asset: fonts/Poppins-Italic.ttf
           style: italic
-
-  assets:
-    - assets/sounds/the-gangsters-mashup-sidhu-moose-wala-x-shubh-dj-sumit-rajwanshi-sr-music-official.mp3
-    - assets/sounds/we-rollin-gangsta-mashup-2022-sidhu-moosewala-ap-dhillon-shubh-karan-aujla-mahesh-suthar.mp3
-    - assets/sounds/we-rollin-slowed-reverb-shubh-latest-trending-punjabi-song-lofi-partner.mp3
-    - images/

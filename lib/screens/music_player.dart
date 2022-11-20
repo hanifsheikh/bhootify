@@ -72,12 +72,10 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                   children: [
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
-                      child: const SizedBox(
-                        height: 32.00,
-                        child: Image(
-                            fit: BoxFit.cover,
-                            image: AssetImage('images/back_button.png')),
-                      ),
+                      child: SizedBox(
+                          height: 32.00,
+                          child: Image.network(widget.file.thumbnailURL,
+                              fit: BoxFit.cover)),
                     ),
                     Expanded(
                         child: Container(
@@ -117,15 +115,12 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                 height: 280.0,
                 child: ClipRect(
                   child: DropShadowImage(
-                    offset: Offset(10, 10),
-                    scale: 1,
-                    blurRadius: 10,
-                    borderRadius: 20,
-                    image: Image.asset(
-                      'images/' + widget.file.thumbnailURL,
-                      height: 200,
-                    ),
-                  ),
+                      offset: Offset(10, 10),
+                      scale: 1,
+                      blurRadius: 10,
+                      borderRadius: 20,
+                      image:
+                          Image.network(widget.file.thumbnailURL, height: 200)),
                 ),
               ),
               Container(
@@ -160,7 +155,7 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
               Slider(
                   min: 0,
                   thumbColor: const Color(0xFFFFFFFF),
-                  inactiveColor: Color.fromARGB(255, 92, 92, 92),
+                  inactiveColor: const Color.fromARGB(255, 92, 92, 92),
                   activeColor: const Color(0xFFFA7F16),
                   max: duration.inSeconds.toDouble(),
                   value: position.inSeconds.toDouble(),
@@ -210,8 +205,7 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                     if (isPlaying) {
                       await player.pause();
                     } else {
-                      await player
-                          .play(AssetSource('sounds/' + widget.file.fileURL));
+                      await player.play(UrlSource(widget.file.fileURL));
                     }
                   },
                 ),
