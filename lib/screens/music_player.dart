@@ -6,7 +6,6 @@ import 'package:audioplayers/audioplayers.dart';
 class MusicPlayerScreen extends StatefulWidget {
   final File file;
   const MusicPlayerScreen({Key? key, required this.file}) : super(key: key);
-
   @override
   State<MusicPlayerScreen> createState() => MusicPlayerScreenState();
 }
@@ -14,6 +13,7 @@ class MusicPlayerScreen extends StatefulWidget {
 class MusicPlayerScreenState extends State<MusicPlayerScreen> {
   AudioPlayer player = AudioPlayer();
   bool isPlaying = false;
+  bool isLoading = false;
 
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
@@ -29,11 +29,21 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    dynamic start() async {
+      await player.play(UrlSource(widget.file.fileURL));
+      setState(() {
+        isLoading = false;
+      });
+    }
 
+    start();
     // Listen to states: playing, paused, stopped.
     player.onPlayerStateChanged.listen((state) {
       setState(() {
         isPlaying = state == PlayerState.playing;
+        if (isPlaying) {
+          isLoading = false;
+        }
       });
     });
 
@@ -66,53 +76,7 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
           child: ListView(
             children: [
               Container(
-                padding: const EdgeInsets.only(
-                    top: 20.0, left: 20.0, right: 20.0, bottom: 20.0),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: SizedBox(
-                          height: 32.00,
-                          child: Image.network(widget.file.thumbnailURL,
-                              fit: BoxFit.cover)),
-                    ),
-                    Expanded(
-                        child: Container(
-                            child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(right: 5.00),
-                          child: const Text(
-                            'NOW',
-                            style: TextStyle(
-                                color: Color(0xFFFA7F16),
-                                fontSize: 16.0,
-                                letterSpacing: 2.0,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        Container(
-                          child: const Text(
-                            'PLAYING',
-                            style: TextStyle(
-                                color: Color(0xFFFFFFFF),
-                                fontSize: 16.0,
-                                fontFamily: 'Poppins',
-                                letterSpacing: 2.0,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        )
-                      ],
-                    )))
-                  ],
-                ),
-              ),
-              Container(
-                height: 280.0,
+                height: 350.0,
                 child: ClipRect(
                   child: DropShadowImage(
                       offset: Offset(10, 10),
@@ -157,7 +121,7 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                   thumbColor: const Color(0xFFFFFFFF),
                   inactiveColor: const Color.fromARGB(255, 92, 92, 92),
                   activeColor: const Color(0xFFFA7F16),
-                  max: duration.inSeconds.toDouble(),
+                  max: duration.inSeconds.toDouble() + 1.0,
                   value: position.inSeconds.toDouble(),
                   onChanged: (value) async {
                     final position = Duration(seconds: value.toInt());
@@ -190,24 +154,134 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                   ],
                 ),
               ),
-              CircleAvatar(
-                radius: 35,
-                backgroundColor: isPlaying
-                    ? const Color(0xFFFA7F16)
-                    : const Color(0xFFFFFFFF),
-                child: IconButton(
-                  icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                  iconSize: 24,
-                  color: isPlaying
-                      ? const Color(0xFFFFFFFF)
-                      : const Color(0xFFFA7F16),
-                  onPressed: () async {
-                    if (isPlaying) {
-                      await player.pause();
-                    } else {
-                      await player.play(UrlSource(widget.file.fileURL));
-                    }
-                  },
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      SizedBox.fromSize(
+                        size: const Size(56, 56),
+                        child: ClipOval(
+                          child: Material(
+                            color: Colors.transparent, // button color
+                            child: InkWell(
+                              splashColor:
+                                  const Color(0xFFFA7F16), // splash color
+                              onTap: () async {
+                                await player.seek(Duration(
+                                    seconds: position.inSeconds.toInt() - 10));
+                              }, // button pressed
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Padding(
+                                    padding: EdgeInsets.only(right: 5.0),
+                                    child: Icon(
+                                      Icons.fast_rewind,
+                                      color: Color(0xFFFFFFFF),
+                                      size: 14,
+                                    ),
+                                  ), // icon
+                                  Text(
+                                    "10 sec",
+                                    style: TextStyle(
+                                        color: Color(0xFFFFFFFF),
+                                        fontFamily: 'Poppins',
+                                        fontSize: 12.0,
+                                        fontWeight: FontWeight.w400),
+                                  ), // text
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      CircleAvatar(
+                          backgroundColor: Colors.transparent,
+                          radius: 24,
+                          child: IconButton(
+                            icon: const Icon(Icons.fast_rewind),
+                            iconSize: 24,
+                            color: const Color(0xFFFFFFFF),
+                            onPressed: () => {},
+                          )),
+                      CircleAvatar(
+                        radius: 35,
+                        backgroundColor: isPlaying
+                            ? const Color(0xFFFA7F16)
+                            : const Color(0xFFFFFFFF),
+                        child: IconButton(
+                          icon: isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Color(0xFFFA7F16),
+                                )
+                              : Icon(
+                                  isPlaying ? Icons.pause : Icons.play_arrow),
+                          iconSize: 24,
+                          color: isPlaying
+                              ? const Color(0xFFFFFFFF)
+                              : const Color(0xFFFA7F16),
+                          onPressed: () async {
+                            if (isPlaying) {
+                              await player.pause();
+                            } else {
+                              await player.play(UrlSource(widget.file.fileURL));
+                            }
+                          },
+                        ),
+                      ),
+                      CircleAvatar(
+                          backgroundColor: Colors.transparent,
+                          radius: 24,
+                          child: IconButton(
+                            icon: const Icon(Icons.fast_forward),
+                            iconSize: 24,
+                            color: const Color(0xFFFFFFFF),
+                            onPressed: () async {},
+                          )),
+                      SizedBox.fromSize(
+                        size: const Size(56, 56),
+                        child: ClipOval(
+                          child: Material(
+                            color: Colors.transparent, // button color
+                            child: InkWell(
+                              splashColor:
+                                  const Color(0xFFFA7F16), // splash color
+                              onTap: () async {
+                                await player.seek(Duration(
+                                    seconds: position.inSeconds.toInt() + 10));
+                              }, // button pressed
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  // icon
+                                  Text(
+                                    "10 sec",
+                                    style: TextStyle(
+                                        color: Color(0xFFFFFFFF),
+                                        fontFamily: 'Poppins',
+                                        fontSize: 12.0,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.only(left: 5.0),
+                                    child: Icon(
+                                      Icons.fast_forward,
+                                      color: Color(0xFFFFFFFF),
+                                      size: 14,
+                                    ),
+                                  ), // text
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               )
             ],
