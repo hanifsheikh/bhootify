@@ -109,4 +109,3 @@ flutter:
           style: italic
   assets:
     - assets/images/bg.jpeg
-    - assets/files.json
