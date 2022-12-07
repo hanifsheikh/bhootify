@@ -1,19 +1,23 @@
-import 'package:bhootify/models/file_model.dart';
-import 'package:drop_shadow_image/drop_shadow_image.dart';
+import 'package:bhootify/providers/music_player_provider.dart';
+// import 'package:drop_shadow_image/drop_shadow_image.dart';
+import 'package:optimized_cached_image/optimized_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
-  final File file;
-  const MusicPlayerScreen({Key? key, required this.file}) : super(key: key);
+  const MusicPlayerScreen({
+    Key? key,
+  }) : super(key: key);
   @override
   State<MusicPlayerScreen> createState() => MusicPlayerScreenState();
 }
 
 class MusicPlayerScreenState extends State<MusicPlayerScreen> {
-  AudioPlayer player = AudioPlayer();
+  dynamic file = {};
   bool isPlaying = false;
-  bool isLoading = false;
+  bool isLoading = true;
+  dynamic player;
 
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
@@ -27,77 +31,51 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    dynamic start() async {
-      await player.play(UrlSource(widget.file.fileURL));
-      setState(() {
-        isLoading = false;
-      });
-    }
-
-    start();
-    // Listen to states: playing, paused, stopped.
-    player.onPlayerStateChanged.listen((state) {
-      setState(() {
-        isPlaying = state == PlayerState.playing;
-        if (isPlaying) {
-          isLoading = false;
-        }
-      });
-    });
-
-    // Listen to audio duration
-    player.onDurationChanged.listen((newDuration) {
-      setState(() {
-        duration = newDuration;
-      });
-    });
-
-    // Listen to audio position
-    player.onPositionChanged.listen((newPosition) {
-      setState(() {
-        position = newPosition;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    player.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    setState(() {
+      player = Provider.of<MusicPlayerProvider>(context, listen: true).player;
+      file =
+          Provider.of<MusicPlayerProvider>(context, listen: true).selectedFile;
+      isPlaying =
+          Provider.of<MusicPlayerProvider>(context, listen: true).isPlaying;
+      isLoading =
+          Provider.of<MusicPlayerProvider>(context, listen: true).isLoading;
+      duration =
+          Provider.of<MusicPlayerProvider>(context, listen: true).duration;
+      position =
+          Provider.of<MusicPlayerProvider>(context, listen: true).position;
+    });
+
     return Scaffold(
-        backgroundColor: const Color(0xFF383736),
+        backgroundColor: const Color.fromARGB(255, 26, 26, 26),
         body: SafeArea(
           child: ListView(
             children: [
+              SizedBox(
+                  height: 200.0,
+                  child: ClipRect(
+                      child: OptimizedCacheImage(
+                          imageUrl: file.thumbnailURL,
+                          imageBuilder: (context, imageProvider) => Container(
+                                height: 200.00,
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: imageProvider,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              )))),
               Container(
-                height: 350.0,
-                child: ClipRect(
-                  child: DropShadowImage(
-                      offset: Offset(10, 10),
-                      scale: 1,
-                      blurRadius: 10,
-                      borderRadius: 20,
-                      image:
-                          Image.network(widget.file.thumbnailURL, height: 200)),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.only(left: 20.0, right: 20.0),
+                padding:
+                    const EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.file.title,
+                      file.title,
                       style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontFamily: 'Poppins',
-                          letterSpacing: 1.2,
                           fontSize: 14.0,
                           color: Color(0xFFFFFFFF)),
                     ),
@@ -105,7 +83,7 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                       height: 5.0,
                     ),
                     Text(
-                      widget.file.author,
+                      file.author,
                       style: const TextStyle(
                           fontWeight: FontWeight.w300,
                           fontFamily: 'Poppins',
@@ -116,41 +94,80 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                   ],
                 ),
               ),
-              Slider(
-                  min: 0,
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: const Color(0xFFFA7F16),
+                  inactiveTrackColor: const Color.fromARGB(255, 55, 55, 55),
                   thumbColor: const Color(0xFFFFFFFF),
-                  inactiveColor: const Color.fromARGB(255, 92, 92, 92),
-                  activeColor: const Color(0xFFFA7F16),
-                  max: duration.inSeconds.toDouble() + 1.0,
-                  value: position.inSeconds.toDouble(),
-                  onChanged: (value) async {
-                    final position = Duration(seconds: value.toInt());
-                    await player.seek(position);
+                  trackShape: const RectangularSliderTrackShape(),
+                  trackHeight: 3.0,
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 8.0),
+                  overlayColor: const Color(0xFFFA7F16).withAlpha(32),
+                  overlayShape:
+                      const RoundSliderOverlayShape(overlayRadius: 20.0),
+                ),
+                child: SizedBox(
+                  width: 400,
+                  child: Slider(
+                    min: 0,
+                    max: duration.inSeconds.toDouble() + 1.0,
+                    value: position.inSeconds.toDouble(),
+                    onChanged: (value) async {
+                      Provider.of<MusicPlayerProvider>(context, listen: false)
+                          .setSeekPosition(value);
 
-                    // Optional: Play audio if was paused
-                    // await player.resume();
-                  }),
+                      // Optional: Play audio if was paused
+                      // await player.resume();
+                    },
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      formatTime(duration),
+                      formatTime(position),
                       style: const TextStyle(
                           color: Color(0xFFFFFFFF),
                           fontSize: 10.0,
                           fontWeight: FontWeight.w400,
                           fontFamily: 'Poppins'),
                     ),
-                    Text(
-                      formatTime(duration - position),
-                      style: const TextStyle(
-                          color: Color(0xFFFFFFFF),
-                          fontSize: 10.0,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: 'Poppins'),
-                    )
+                    Row(children: [
+                      Text(
+                        formatTime(duration - position),
+                        style: const TextStyle(
+                            color: Color(0xFFFFFFFF),
+                            fontSize: 10.0,
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'Poppins'),
+                      ),
+                      const SizedBox(
+                        width: 5.00,
+                      ),
+                      const Text(
+                        '/',
+                        style: TextStyle(
+                            color: Color(0xFFFFFFFF),
+                            fontSize: 10.0,
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'Poppins'),
+                      ),
+                      const SizedBox(
+                        width: 5.00,
+                      ),
+                      Text(
+                        formatTime(duration),
+                        style: const TextStyle(
+                            color: Color(0xFFFFFFFF),
+                            fontSize: 10.0,
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'Poppins'),
+                      ),
+                    ])
                   ],
                 ),
               ),
@@ -161,7 +178,7 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       SizedBox.fromSize(
-                        size: const Size(56, 56),
+                        size: const Size(60, 60),
                         child: ClipOval(
                           child: Material(
                             color: Colors.transparent, // button color
@@ -227,7 +244,7 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                             if (isPlaying) {
                               await player.pause();
                             } else {
-                              await player.play(UrlSource(widget.file.fileURL));
+                              await player.play(UrlSource(file.fileURL));
                             }
                           },
                         ),
@@ -242,7 +259,7 @@ class MusicPlayerScreenState extends State<MusicPlayerScreen> {
                             onPressed: () async {},
                           )),
                       SizedBox.fromSize(
-                        size: const Size(56, 56),
+                        size: const Size(60, 60),
                         child: ClipOval(
                           child: Material(
                             color: Colors.transparent, // button color
